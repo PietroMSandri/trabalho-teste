@@ -1,17 +1,25 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ImageSourcePropType, Platform } from "react-native";
 import ImageViewer from '@/components/imageViewer';
 import Button from '@/components/Button';
 import IconButton from '../components/IconButton';
 import CircleButton from '../components/CircleButton';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import EmojiPicker from "../components/EmojiPicker";
 import EmojiList from "../components/EmojiList";
 import EmojiSticker from "../components/EmojiSticker";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as MediaLibrary from 'expo-media-library';
+import { captureRef } from 'react-native-view-shot';
 
 const PlaceholderImage = require('@/assets/images/opel.png');
 
 export default function Index() {
+  const imageRef = useRef<View>(null);
+
+  // Hook de permissão correto
+  const [status, requestPermission] = MediaLibrary.usePermissions();
+
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -19,10 +27,14 @@ export default function Index() {
 
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // corrigido
       allowsEditing: true,
       quality: 1,
     });
+
+    if (status === null) {
+      requestPermission();
+    }
 
     if (!result.canceled) {
       setSelectedImage(result.assets[0].uri);
@@ -34,21 +46,46 @@ export default function Index() {
 
   const onReset = () => {
     setShowAppOptions(false);
+    setPickedEmoji(undefined);
   };
 
   const onAddSticker = () => {
     setIsModalVisible(true);
   };
 
-  const onSaveImageAsync = () => {
+  const onSaveImageAsync = async () => {
+    try {
+      if (Platform.OS !== "web") {
+        if (imageRef.current) {
+          const localUri = await captureRef(imageRef.current, {
+            height: 440,
+            quality: 1,
+          });
+
+          if (localUri) {
+            await MediaLibrary.saveToLibraryAsync(localUri);
+            alert("Imagem salva na galeria!");
+          }
+        }
+      } else {
+        alert("Salvar no navegador ainda não foi implementado.");
+      }
+    } catch (e) {
+      console.log("Erro ao salvar imagem:", e);
+    }
+  };
+
+  const onModalClose = () => {
     setIsModalVisible(false);
   };
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <View style={styles.imageContainer}>
-        <ImageViewer imgSource={PlaceholderImage} selectedImage={selectedImage} />
-        {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+        <View ref={imageRef} collapsable={false}>
+          <ImageViewer imgSource={PlaceholderImage} selectedImage={selectedImage} />
+          {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+        </View>
       </View>
 
       {showAppOptions ? (
@@ -65,10 +102,11 @@ export default function Index() {
           <Button label="Use essa foto" onPress={() => setShowAppOptions(true)} />
         </View>
       )}
+
       <EmojiPicker isVisible={isModalVisible} onClose={onModalClose}>
-        <EmojiList onSelect ={setPickedEmoji} onCloseModal={onModalClose} />
+        <EmojiList onSelect={setPickedEmoji} onCloseModal={onModalClose} />
       </EmojiPicker>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
