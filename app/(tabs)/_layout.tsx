@@ -1,27 +1,21 @@
 import { Tabs } from 'expo-router';
-
-
 import Ionicons from '@expo/vector-icons/Ionicons';
-
 
 export default function TabLayout() {
   return (
     <Tabs
-     screenOptions={{
-      tabBarActiveTintColor: 'gold',
-      headerStyle: {
-      backgroundColor: '#134761',
-
-
-    },
-      headerShadowVisible: false,
-      headerTintColor: '#fff',
-      tabBarStyle: {
-      backgroundColor: '#134761',
-    },
-    }}
+      screenOptions={{
+        tabBarActiveTintColor: 'gold',
+        headerStyle: {
+          backgroundColor: '#134761',
+        },
+        headerShadowVisible: false,
+        headerTintColor: '#fff',
+        tabBarStyle: {
+          backgroundColor: '#134761',
+        },
+      }}
     >
-
       <Tabs.Screen
         name="index"
         options={{
@@ -31,7 +25,7 @@ export default function TabLayout() {
           ),
         }}
       />
-       <Tabs.Screen
+      <Tabs.Screen
         name="toDoList"
         options={{
           title: 'Lista',
@@ -58,8 +52,20 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* NOVA TAB - CLIMA */}
+      <Tabs.Screen
+        name="weather"
+        options={{
+          title: 'Clima',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? 'partly-sunny-outline' : 'partly-sunny'} 
+              color={color} 
+              size={24} 
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
-
-  
 }
